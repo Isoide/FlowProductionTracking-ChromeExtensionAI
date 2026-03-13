@@ -7,80 +7,11 @@ body {
   padding: 8px;
 }
 
-input,
 button,
-textarea,
-select {
+textarea {
   font-family: inherit;
   font-size: inherit;
 }
-
-button {
-  background: #333;
-  color: white;
-  border-radius: 8px;
-  border: none;
-  min-width: 100px;
-  padding: 8px;
-  margin: 16px 0;
-  cursor: pointer;
-}
-
-button.primary {
-  background: #333;
-  color: white;
-}
-
-button.secondary {
-  background: #ccc;
-  color: black;
-}
-
-button[disabled] {
-  background: #ddd;
-  color: #aaa;
-}
-
-input[type='range'] {
-  margin-top: 16px;
-  accent-color: black;
-}
-
-textarea {
-  --padding: 32px;
-  width: calc(100% - var(--padding));
-  max-width: calc(100% - var(--padding));
-}
-
-.text,
-textarea {
-  background-color: white;
-  padding: 16px;
-  border-radius: 16px;
-  box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px, rgb(51, 51, 51) 0px 0px 0px 3px;
-  outline: none;
-}
-
-.blink {
-  animation: 1s ease-in-out 1s infinite reverse both running blink;
-}
-
-@keyframes blink {
-  25% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 0;
-  }
-  75% {
-    opacity: 0.5;
-  }
-}
-
-[hidden] {
-  display: none;
-}
-
 
 h2 {
   margin: 0 0 8px;
@@ -94,13 +25,42 @@ h2 {
   font-size: 14px;
 }
 
-hr {
-  border: none;
-  border-top: 1px solid #d0d0d0;
-  margin: 20px 0;
+textarea {
+  --padding: 32px;
+  width: calc(100% - var(--padding));
+  max-width: calc(100% - var(--padding));
+  min-height: 220px;
+  background-color: white;
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px, rgb(51, 51, 51) 0px 0px 0px 3px;
+  outline: none;
 }
 
-#status {
-  margin-top: 8px;
+button {
+  background: #333;
+  color: white;
+  border-radius: 8px;
+  border: none;
+  width: 100%;
+  padding: 10px;
+  margin: 16px 0;
+  cursor: pointer;
+}
+
+button[disabled] {
+  background: #ddd;
+  color: #aaa;
+}
+
+.text {
+  background-color: white;
+  padding: 14px;
+  border-radius: 12px;
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
   white-space: pre-wrap;
+}
+
+[hidden] {
+  display: none;
 }
