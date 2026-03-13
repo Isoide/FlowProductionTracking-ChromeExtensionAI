@@ -6,7 +6,21 @@
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": ["sidePanel"],
+  "permissions": ["sidePanel", "tabs"],
+  "host_permissions": [
+    "*://*.shotgrid.autodesk.com/*",
+    "*://*.shotgunstudio.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.shotgrid.autodesk.com/*",
+        "*://*.shotgunstudio.com/*"
+      ],
+      "js": ["flow-comment-helper.js"],
+      "run_at": "document_idle"
+    }
+  ],
   "minimum_chrome_version": "138",
   "side_panel": {
     "default_path": "sidepanel/index.html"

@@ -14,6 +14,10 @@ const sliderTopK = document.body.querySelector('#top-k');
 const labelTemperature = document.body.querySelector('#label-temperature');
 const labelTopK = document.body.querySelector('#label-top-k');
 
+const rewriteInstruction = document.body.querySelector('#rewrite-instruction');
+const buttonRewrite = document.body.querySelector('#button-rewrite');
+const statusElement = document.body.querySelector('#status');
+
 let session;
 
 async function runPrompt(prompt, params) {
@@ -26,7 +30,6 @@ async function runPrompt(prompt, params) {
     console.log('Prompt failed');
     console.error(e);
     console.log('Prompt:', prompt);
-    // Reset session
     reset();
     throw e;
   }
@@ -47,10 +50,7 @@ async function initDefaults() {
     return;
   }
   sliderTemperature.value = defaults.defaultTemperature;
-  // Pending https://issues.chromium.org/issues/367771112.
-  // sliderTemperature.max = defaults.maxTemperature;
   if (defaults.defaultTopK > 3) {
-    // limit default topK to 3
     sliderTopK.value = 3;
     labelTopK.textContent = 3;
   } else {
@@ -107,6 +107,70 @@ buttonPrompt.addEventListener('click', async () => {
   }
 });
 
+buttonRewrite.addEventListener('click', async () => {
+  showStatus('Detecting comment field on active Flow page...');
+  buttonRewrite.setAttribute('disabled', '');
+
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) {
+      throw new Error('No active tab found.');
+    }
+
+    const extracted = await chrome.tabs.sendMessage(tab.id, {
+      action: 'extractFlowCommentField'
+    });
+
+    if (!extracted?.ok) {
+      throw new Error(extracted?.error || 'Could not read comment field.');
+    }
+
+    const sourceText = extracted.originalText?.trim();
+    if (!sourceText) {
+      throw new Error('The detected comment field is empty. Add text first, then rewrite.');
+    }
+
+    showStatus('Rewriting comment with local Gemini Nano...');
+
+    const params = {
+      initialPrompts: [
+        {
+          role: 'system',
+          content:
+            'You rewrite comments for Flow Production Tracking. Keep the same meaning and key details. Return only rewritten text with no explanation.'
+        }
+      ],
+      temperature: sliderTemperature.value,
+      topK: sliderTopK.value
+    };
+
+    const prompt = [
+      `Instruction: ${rewriteInstruction.value.trim() || 'Make it clear and professional.'}`,
+      'Original comment:',
+      sourceText,
+      '',
+      'Return only the rewritten comment.'
+    ].join('\n');
+
+    const rewritten = await runPrompt(prompt, params);
+
+    const applied = await chrome.tabs.sendMessage(tab.id, {
+      action: 'applyFlowCommentText',
+      text: rewritten.trim()
+    });
+
+    if (!applied?.ok) {
+      throw new Error(applied?.error || 'Failed to write updated comment.');
+    }
+
+    showStatus('Done. The comment was rewritten and inserted into the detected field.');
+  } catch (error) {
+    showStatus(`Rewrite failed: ${error.message || error}`);
+  } finally {
+    buttonRewrite.removeAttribute('disabled');
+  }
+});
+
 function showLoading() {
   buttonReset.removeAttribute('disabled');
   hide(elementResponse);
@@ -125,6 +189,11 @@ function showError(error) {
   hide(elementResponse);
   hide(elementLoading);
   elementError.textContent = error;
+}
+
+function showStatus(message) {
+  statusElement.textContent = message;
+  show(statusElement);
 }
 
 function show(element) {
