@@ -80,3 +80,27 @@ textarea {
 [hidden] {
   display: none;
 }
+
+
+h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.hint {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: #4a4a4a;
+  font-size: 14px;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #d0d0d0;
+  margin: 20px 0;
+}
+
+#status {
+  margin-top: 8px;
+  white-space: pre-wrap;
+}

@@ -4,6 +4,24 @@
     <link rel="stylesheet" type="text/css" href="index.css" />
   </head>
   <body>
+    <h2>Flow Comment Rewriter (Demo)</h2>
+    <p class="hint">
+      Opens the active Flow Production Tracking page, detects a writable comment field,
+      and rewrites its current text using local Gemini Nano.
+    </p>
+
+    <textarea
+      id="rewrite-instruction"
+      placeholder='Rewrite style, e.g. "Make this concise and professional."'
+      cols="30"
+      rows="3"
+    >Make this clear, concise, and professional while preserving meaning.</textarea>
+    <button id="button-rewrite" class="primary">Rewrite active comment</button>
+
+    <div id="status" class="text" hidden></div>
+
+    <hr />
+
     <textarea
       id="input-prompt"
       placeholder='Type something, e.g. "Write a haiku about Chrome Extensions"'
