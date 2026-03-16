@@ -7,53 +7,29 @@ body {
   padding: 8px;
 }
 
-input,
 button,
-textarea,
-select {
+textarea {
   font-family: inherit;
   font-size: inherit;
 }
 
-button {
-  background: #333;
-  color: white;
-  border-radius: 8px;
-  border: none;
-  min-width: 100px;
-  padding: 8px;
-  margin: 16px 0;
-  cursor: pointer;
+h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
 }
 
-button.primary {
-  background: #333;
-  color: white;
-}
-
-button.secondary {
-  background: #ccc;
-  color: black;
-}
-
-button[disabled] {
-  background: #ddd;
-  color: #aaa;
-}
-
-input[type='range'] {
-  margin-top: 16px;
-  accent-color: black;
+.hint {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: #4a4a4a;
+  font-size: 14px;
 }
 
 textarea {
   --padding: 32px;
   width: calc(100% - var(--padding));
   max-width: calc(100% - var(--padding));
-}
-
-.text,
-textarea {
+  min-height: 220px;
   background-color: white;
   padding: 16px;
   border-radius: 16px;
@@ -61,20 +37,28 @@ textarea {
   outline: none;
 }
 
-.blink {
-  animation: 1s ease-in-out 1s infinite reverse both running blink;
+button {
+  background: #333;
+  color: white;
+  border-radius: 8px;
+  border: none;
+  width: 100%;
+  padding: 10px;
+  margin: 16px 0;
+  cursor: pointer;
 }
 
-@keyframes blink {
-  25% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 0;
-  }
-  75% {
-    opacity: 0.5;
-  }
+button[disabled] {
+  background: #ddd;
+  color: #aaa;
+}
+
+.text {
+  background-color: white;
+  padding: 14px;
+  border-radius: 12px;
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+  white-space: pre-wrap;
 }
 
 [hidden] {

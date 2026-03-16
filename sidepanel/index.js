@@ -1,136 +1,125 @@
 /* global LanguageModel */
 
-import DOMPurify from 'dompurify';
-import { marked } from 'marked';
+const inputFeedback = document.body.querySelector('#input-feedback');
+const buttonConvert = document.body.querySelector('#button-convert');
+const statusElement = document.body.querySelector('#status');
 
-const inputPrompt = document.body.querySelector('#input-prompt');
-const buttonPrompt = document.body.querySelector('#button-prompt');
-const buttonReset = document.body.querySelector('#button-reset');
-const elementResponse = document.body.querySelector('#response');
-const elementLoading = document.body.querySelector('#loading');
-const elementError = document.body.querySelector('#error');
-const sliderTemperature = document.body.querySelector('#temperature');
-const sliderTopK = document.body.querySelector('#top-k');
-const labelTemperature = document.body.querySelector('#label-temperature');
-const labelTopK = document.body.querySelector('#label-top-k');
+const SYSTEM_PROMPT = `You are a VFX feedback organizer. Transform messy supervisor comments into clean, modular, artist-facing review notes.
+
+Rules:
+
+Preserve intent.
+
+Do not invent major feedback.
+
+Organize chaotic notes into clear sections.
+
+Separate implemented changes from pending work.
+
+Keep a professional VFX production tone.
+
+Use the same language as the input.
+
+Normalize grammar, punctuation, and readability.
+
+Keep ambiguity if present, but phrase it clearly.
+
+Output only the cleaned feedback.
+
+Preferred structure:
+
+WIP
+
+Context
+
+Implemented in this version
+
+Still to address
+
+Priority focus
+
+General notes
+
+Guidelines:
+
+Put completed changes under “Implemented in this version”.
+
+Put pending work under “Still to address”.
+
+Group notes when useful into categories like cleanup, atmosphere, integration, animation, environment, crowd/life, and technical fixes.
+
+Keep it concise and actionable.
+
+No greetings, no explanations, no meta commentary.`;
 
 let session;
 
-async function runPrompt(prompt, params) {
-  try {
-    if (!session) {
-      session = await LanguageModel.create(params);
-    }
-    return session.prompt(prompt);
-  } catch (e) {
-    console.log('Prompt failed');
-    console.error(e);
-    console.log('Prompt:', prompt);
-    // Reset session
-    reset();
-    throw e;
+inputFeedback.addEventListener('input', () => {
+  if (inputFeedback.value.trim()) {
+    buttonConvert.removeAttribute('disabled');
+  } else {
+    buttonConvert.setAttribute('disabled', '');
   }
-}
+});
 
-async function reset() {
-  if (session) {
-    session.destroy();
-  }
-  session = null;
-}
-
-async function initDefaults() {
-  const defaults = await LanguageModel.params();
-  console.log('Model default:', defaults);
-  if (!('LanguageModel' in self)) {
-    showResponse('Model not available');
+buttonConvert.addEventListener('click', async () => {
+  const feedback = inputFeedback.value.trim();
+  if (!feedback) {
+    showStatus('Please add feedback text first.');
     return;
   }
-  sliderTemperature.value = defaults.defaultTemperature;
-  // Pending https://issues.chromium.org/issues/367771112.
-  // sliderTemperature.max = defaults.maxTemperature;
-  if (defaults.defaultTopK > 3) {
-    // limit default topK to 3
-    sliderTopK.value = 3;
-    labelTopK.textContent = 3;
-  } else {
-    sliderTopK.value = defaults.defaultTopK;
-    labelTopK.textContent = defaults.defaultTopK;
-  }
-  sliderTopK.max = defaults.maxTopK;
-  labelTemperature.textContent = defaults.defaultTemperature;
-}
 
-initDefaults();
+  buttonConvert.setAttribute('disabled', '');
+  showStatus('Reformatting feedback with local Gemini Nano...');
 
-buttonReset.addEventListener('click', () => {
-  hide(elementLoading);
-  hide(elementError);
-  hide(elementResponse);
-  reset();
-  buttonReset.setAttribute('disabled', '');
-});
-
-sliderTemperature.addEventListener('input', (event) => {
-  labelTemperature.textContent = event.target.value;
-  reset();
-});
-
-sliderTopK.addEventListener('input', (event) => {
-  labelTopK.textContent = event.target.value;
-  reset();
-});
-
-inputPrompt.addEventListener('input', () => {
-  if (inputPrompt.value.trim()) {
-    buttonPrompt.removeAttribute('disabled');
-  } else {
-    buttonPrompt.setAttribute('disabled', '');
-  }
-});
-
-buttonPrompt.addEventListener('click', async () => {
-  const prompt = inputPrompt.value.trim();
-  showLoading();
   try {
-    const params = {
-      initialPrompts: [
-        { role: 'system', content: 'You are a helpful and friendly assistant.' }
-      ],
-      temperature: sliderTemperature.value,
-      topK: sliderTopK.value
-    };
-    const response = await runPrompt(prompt, params);
-    showResponse(response);
-  } catch (e) {
-    showError(e);
+    const cleaned = await convertFeedback(feedback);
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    if (!tab?.id) {
+      throw new Error('No active tab found.');
+    }
+
+    const applied = await chrome.tabs.sendMessage(tab.id, {
+      action: 'applyFlowCommentText',
+      text: cleaned.trim()
+    });
+
+    if (!applied?.ok) {
+      throw new Error(applied?.error || 'Could not update the Flow comment field.');
+    }
+
+    showStatus('Done. Cleaned feedback was inserted into the active Flow comment field.');
+  } catch (error) {
+    showStatus(`Convert failed: ${error.message || error}`);
+  } finally {
+    if (inputFeedback.value.trim()) {
+      buttonConvert.removeAttribute('disabled');
+    }
   }
 });
 
-function showLoading() {
-  buttonReset.removeAttribute('disabled');
-  hide(elementResponse);
-  hide(elementError);
-  show(elementLoading);
+async function convertFeedback(rawFeedback) {
+  const prompt = ['Feedback to clean:', rawFeedback, '', 'Output only the cleaned feedback.'].join('\n');
+  const model = await getSession();
+  return model.prompt(prompt);
 }
 
-function showResponse(response) {
-  hide(elementLoading);
-  show(elementResponse);
-  elementResponse.innerHTML = DOMPurify.sanitize(marked.parse(response));
+async function getSession() {
+  if (!('LanguageModel' in self)) {
+    throw new Error('LanguageModel is not available in this Chrome build.');
+  }
+
+  if (!session) {
+    session = await LanguageModel.create({
+      initialPrompts: [{ role: 'system', content: SYSTEM_PROMPT }]
+    });
+  }
+
+  return session;
 }
 
-function showError(error) {
-  show(elementError);
-  hide(elementResponse);
-  hide(elementLoading);
-  elementError.textContent = error;
-}
-
-function show(element) {
-  element.removeAttribute('hidden');
-}
-
-function hide(element) {
-  element.setAttribute('hidden', '');
+function showStatus(message) {
+  statusElement.textContent = message;
+  statusElement.removeAttribute('hidden');
 }
